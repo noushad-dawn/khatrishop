@@ -3,16 +3,28 @@ const bcrypt = require("bcrypt");
 
 // Define the user schema
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  username: {
+    type: String,
+    required: [true, "Username is required"],
+    unique: true,
+    trim: true,
+  },
+  password: {
+    type: String,
+    required: [true, "Password is required"],
+  },
 });
 
 // Hash the password before saving the user
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
+  if (!this.isModified("password")) return next(); // Only hash the password if modified
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Add the comparePassword method
